@@ -1,0 +1,103 @@
+
+<html>
+  <head>
+    <style>
+      span{
+        padding-right:30px;
+        width:100px;
+      }
+      .description{
+        height: 100px;
+      }
+    </style>
+    <script src="jquery-1.6.4.min.js"></script>
+    <script>
+        $(document).ready(function(){
+        var meetup_norway = {};
+            function getMeetups(){
+              
+                $.ajax({
+                  url: "https://api.meetup.com/groups?key=e3db3a32347b5a19384d214226e4f&sign=true&country=NO&city=Oslo&callback=?", 
+                  crossDomain: true, 
+                  dataType: "jsonp",
+                  type: "GET", 
+                  success: function(data){
+                    meetup_norway.meetups = data.results;
+                    parseMeetupData();
+                    console.log(data);
+                  },
+                  error: function(data){
+                    console.log("error", data);
+                  }
+                });
+              
+            }
+            
+            function parseMeetupData(){
+                meetups = meetup_norway.meetups;
+                var html = $('<div></div>');
+                for(i=0; i < meetups.length; i++){
+                  html.append("<div class='listing'><span><a target='_blank' href='" + meetups[i].link + "'>" + meetups[i].name + "</a></span>");
+                  html.append("<span>" + meetups[i].members + "</span>");
+                  html.append("<span class='description'>" + meetups[i].description.substr(0, 75) + "</span></div><br/>");
+                  
+                  
+                }
+                $("#meetups").html(html);
+            }
+            
+            function searchMeetups(){
+              var searchTerm = $("#search_box").val();
+              $.ajax({
+                url: 'https://api.meetup.com/2/open_events?key=e3db3a32347b5a19384d214226e4f&sign=true&city=Oslo&country=NO&text=' + searchTerm + '&callback=?',
+                dataType: "jsonp",
+                crossDomain: true,
+                type:"GET",
+                success: function(data){
+                  console.log(data);
+                  meetup_norway.search_results = data.results;
+                  if(data.results.length==0)
+                  {
+                    $("#meetups").html("Sorry, there are no results for " + searchTerm);
+                  }
+                  else{
+                  getGroup();
+                }
+                }
+              })
+            }
+            
+            function getGroup(){
+              meetup_norway.meetups = [];
+              for(i=0; i < 5; i++){
+                 $.ajax({
+   url:'https://api.meetup.com/2/groups?key=e3db3a32347b5a19384d214226e4f&sign=true&group_id=' + meetup_norway.search_results[i].group.id + '&callback=?',
+                   dataType: "jsonp",
+                   crossDomain: true,
+                   type: "GET",
+                   success: function(data){
+                     meetup_norway.meetups.push(data.results[0]);
+                     if(meetup_norway.meetups.length == 4)
+                     {
+                        parseMeetupData();
+                     }
+                   }
+                 })
+              }
+            }
+            getMeetups();
+            $("#search").click(searchMeetups);
+          
+        });
+    </script>
+  </head>
+  <body>
+  Welcome to Meetup Norway! Checkout the Norway Meetups below, and search for one you may like. 
+  <br />
+  Search for a type of meetup: <input type="text" id="search_box"/> <input type="button" value="search" id="search"/>
+  <div id="meetups"></div>
+  
+  
+  </body>
+
+</html>
